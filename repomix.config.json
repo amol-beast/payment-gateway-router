@@ -1,0 +1,24 @@
+{
+    "output": {
+        "fileFormat": "markdown",
+        "style": "xml"
+    },
+    "include": [
+        "app/**/*",
+        "config/**/*",
+        "database/**/*",
+        "resources/**/*",
+        "routes/**/*"
+    ],
+    "ignore": {
+        "customPatterns": [
+            "vendor/",
+            "node_modules/",
+            "storage/",
+            "bootstrap/cache/",
+            "public/build/",
+            ".env",
+            "*.log"
+        ]
+    }
+}
