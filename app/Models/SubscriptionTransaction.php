@@ -6,6 +6,7 @@ use Devhammed\LaravelBrickMoney\Casts\AsCurrency;
 use Devhammed\LaravelBrickMoney\Casts\AsIntegerMoney;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class SubscriptionTransaction extends Model
 {
@@ -23,8 +24,26 @@ class SubscriptionTransaction extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Subscription, $this>
+     */
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    /**
+     * @return HasOneThrough<Client, Subscription, $this>
+     */
+    public function client(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Client::class,
+            Subscription::class,
+            'id',
+            'id',
+            'subscription_id',
+            'client_id',
+        );
     }
 }

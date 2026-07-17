@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Users;
 use Illuminate\Auth\Access\Response;
 
 class UserPolicy
@@ -59,7 +58,7 @@ class UserPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Users $users): bool
+    public function forceDelete(User $user, User $users): bool
     {
         return false;
     }

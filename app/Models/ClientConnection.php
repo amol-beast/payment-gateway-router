@@ -20,11 +20,17 @@ class ClientConnection extends Model
         'type' => ConnectionType::class,
     ];
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * @return BelongsTo<PGConnection, $this>
+     */
     public function pgConnection(): BelongsTo
     {
         return $this->belongsTo(PGConnection::class);

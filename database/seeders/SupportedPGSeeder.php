@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 
 class SupportedPGSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         echo "Running SupportedPGSeeder\n";
         $supportedPaymentGateways = [

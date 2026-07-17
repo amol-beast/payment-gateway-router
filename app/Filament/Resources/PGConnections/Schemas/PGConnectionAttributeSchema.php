@@ -74,6 +74,9 @@ class PGConnectionAttributeSchema
             ->all();
     }
 
+    /**
+     * @param  array{type: string, extra: ?string}  $spec
+     */
     protected static function fieldFor(string $key, array $spec): Component
     {
         $label = static::labelFor($key);
@@ -129,6 +132,9 @@ class PGConnectionAttributeSchema
         return $errors;
     }
 
+    /**
+     * @param  array{type: string, extra: ?string}  $spec
+     */
     protected static function validateValue(string $key, array $spec, mixed $value): ?string
     {
         $label = static::labelFor($key);

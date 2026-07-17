@@ -7,6 +7,9 @@ enum ConnectionType: string
     case TEST = "TEST";
     case PRODUCTION = "PRODUCTION";
 
+    /**
+     * @return array<string, string>
+     */
     static public function labels(): array
     {
         return [

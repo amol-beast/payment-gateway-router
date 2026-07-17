@@ -8,6 +8,7 @@ use App\Enums\SubscriptionType;
 use Devhammed\LaravelBrickMoney\Casts\AsCurrency;
 use Devhammed\LaravelBrickMoney\Casts\AsIntegerMoney;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subscription extends Model
@@ -27,5 +28,13 @@ class Subscription extends Model
             'subscription_type' => SubscriptionType::class,
 
         ];
+    }
+
+    /**
+     * @return BelongsTo<Client, $this>
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Clients\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -47,7 +48,7 @@ class ClientsForm
                             ->relationship(
                                 name: 'users',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query) => $query->role('user'),
+                                modifyQueryUsing: static fn (Builder $query): Builder => static::usersWithUserRole($query),
                             )
                             ->multiple()
                             ->searchable()
@@ -107,5 +108,14 @@ class ClientsForm
                             ->reorderable(),
                     ]),
             ]);
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    protected static function usersWithUserRole(Builder $query): Builder
+    {
+        return $query->role('user');
     }
 }

@@ -15,11 +15,17 @@ class PGConnection extends Model
         'type' => ConnectionType::class,
     ];
 
+    /**
+     * @return HasMany<Transaction, $this>
+     */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
+    /**
+     * @return HasMany<ClientConnection, $this>
+     */
     public function clientConnections(): HasMany
     {
         return $this->hasMany(ClientConnection::class, 'pg_connection_id');

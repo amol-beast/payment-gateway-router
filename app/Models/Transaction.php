@@ -29,11 +29,17 @@ class Transaction extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<ClientCustomer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(ClientCustomer::class);
     }
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('client_customer_id')->constrained();
             $table->string('site_reference_id');
             $table->unique(['client_id', 'site_reference_id']);
-            $table->foreignId('pg_connection_id')->constrained()->default;
+            $table->foreignId('pg_connection_id')->constrained();
             $table->integer('amount');
             $table->string('currency')->default('INR');
             $table->integer('transaction_amount');

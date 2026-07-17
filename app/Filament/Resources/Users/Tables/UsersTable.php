@@ -35,7 +35,7 @@ class UsersTable
                     ->link()
                     ->visible(fn (User $record): bool => $record->hasRole('superadmin'))
                     ->fillForm(fn (User $record): array => [
-                        'role' => $record->roles->first()?->name,
+                        'role' => $record->roles()->value('name'),
                     ])
                     ->schema([
                         Select::make('role')

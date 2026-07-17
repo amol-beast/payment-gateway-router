@@ -52,6 +52,9 @@ class RecentTransactionsWidget extends TableWidget
             ]);
     }
 
+    /**
+     * @return Builder<Transaction>
+     */
     protected function getTransactionsQuery(): Builder
     {
         $user = auth()->user();
@@ -66,6 +69,9 @@ class RecentTransactionsWidget extends TableWidget
         return $query;
     }
 
+    /**
+     * @param  Builder<Transaction>  $query
+     */
     protected function scopeToPermittedClients(Builder $query, User $user): void
     {
         if ($user->can('can_view_all_transactions')) {

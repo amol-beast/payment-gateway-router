@@ -12,7 +12,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 class DashboardStatsWidget extends StatsOverviewWidget
 {
@@ -64,6 +64,9 @@ class DashboardStatsWidget extends StatsOverviewWidget
         return $this->formatTotals($totals);
     }
 
+    /**
+     * @param  Builder<Transaction>  $query
+     */
     protected function scopeToPermittedClients(Builder $query, User $user): void
     {
         if ($user->can('can_view_all_transactions')) {
@@ -79,6 +82,9 @@ class DashboardStatsWidget extends StatsOverviewWidget
         $query->whereRaw('1 = 0');
     }
 
+    /**
+     * @param  Collection<int, Transaction>  $totals
+     */
     protected function formatTotals(Collection $totals): string
     {
         if ($totals->isEmpty()) {
@@ -86,7 +92,10 @@ class DashboardStatsWidget extends StatsOverviewWidget
         }
 
         return $totals
-            ->map(fn ($row) => (string) Money::ofMinor((int) $row->total, $row->currency))
+            ->map(fn (Transaction $row): string => (string) Money::ofMinor(
+                (int) $row->getAttribute('total'),
+                $row->currency,
+            ))
             ->implode(' + ');
     }
 }

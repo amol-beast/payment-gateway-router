@@ -21,7 +21,12 @@ class TransactionPolicy
      */
     public function view(User $user, Transaction $transaction): bool
     {
+        if ($user->can('can_view_all_transactions')) {
+            return true;
+        }
 
+        return $user->can('can_view_client')
+            && $transaction->client->users()->whereKey($user->id)->exists();
     }
 
     /**
