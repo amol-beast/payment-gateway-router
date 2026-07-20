@@ -20,8 +20,7 @@
         "razorpay/razorpay": "*",
         "spatie/laravel-data": "*",
         "spatie/laravel-permission": "*",
-        "stripe/stripe-php": "*",
-      "ext-http": "*"
+        "stripe/stripe-php": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",
