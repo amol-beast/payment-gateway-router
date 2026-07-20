@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ClientConnections\Concerns;
 
+use App\Enums\TransactionType;
 use App\Models\ClientConnection;
 use App\Models\PGConnection;
 use Filament\Notifications\Notification;
@@ -11,8 +12,8 @@ trait ValidatesClientConnection
 {
     /**
      * Guard the record from being persisted with an environment that
-     * doesn't match its gateway connection, or with more active
-     * connections than the client is allowed to have.
+     * doesn't match its gateway connection, an invalid transaction type,
+     * or with more active connections than the client is allowed to have.
      *
      * @param  array<string, mixed>  $data
      */
@@ -23,6 +24,12 @@ trait ValidatesClientConnection
         if ($pgConnection && $pgConnection->type->value !== $data['type']) {
             $this->failClientConnectionValidation(
                 "The connection's environment ({$data['type']}) must match the payment gateway's environment ({$pgConnection->type->value})."
+            );
+        }
+
+        if (TransactionType::tryFrom($data['transaction_type'] ?? '') === null) {
+            $this->failClientConnectionValidation(
+                'The selected transaction type is invalid.'
             );
         }
 

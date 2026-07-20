@@ -10,4 +10,6 @@ enum PaymentMethod: string
     case CREDIT_CARD = 'creditcard';
     case DEBIT_CARD = 'debitcard';
     case WALLET = 'wallet';
+
+    case UNKNOWN = 'unknown';
 }

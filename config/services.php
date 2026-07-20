@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'pg_transaction_notifications' => [
+        'email_enabled' => env('PG_TRANSACTION_EMAIL_ENABLED', true),
+    ],
+
 ];

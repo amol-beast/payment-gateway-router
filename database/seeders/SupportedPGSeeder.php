@@ -14,12 +14,12 @@ class SupportedPGSeeder extends Seeder
             'ICICI' => ['pg_class'=> 'ICICI',
                 'required' => [
                     'merchant_id' => 'string',
+                    'aggregator_id' => 'string',
                     'supports_refunds' => 'boolean',
                     'encryption_key' => 'string',
                     'sub_merchant_id' => 'string',
                     'default_base_url' => 'url',
                     'paymode' => 'string',
-                    'return_url' => 'url',
                     'fees_included_in_amount' => 'boolean',
                     'fees_rate' => 'float',
             ]],

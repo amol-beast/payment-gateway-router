@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ClientConnections\Schemas;
 
 use App\Enums\ConnectionType;
+use App\Enums\TransactionType;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -24,6 +25,15 @@ class ClientConnectionsForm
                             ->label('Client')
                             ->relationship('client', 'name')
                             ->prefixIcon(Heroicon::OutlinedBuildingStorefront)
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+                        Select::make('transaction_type')
+                            ->label('Transaction Type')
+                            ->options(TransactionType::labels())
+                            ->default(TransactionType::SALE->value)
+                            ->prefixIcon(Heroicon::OutlinedShare)
                             ->searchable()
                             ->preload()
                             ->required(),

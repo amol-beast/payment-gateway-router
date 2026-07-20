@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ConnectionType;
+use App\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -18,6 +19,7 @@ class ClientConnection extends Model
         'is_recurring' => 'boolean',
         'status' => 'boolean',
         'type' => ConnectionType::class,
+        'transaction_type' => TransactionType::class,
     ];
 
     /**

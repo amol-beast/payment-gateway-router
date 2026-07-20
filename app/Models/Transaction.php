@@ -25,6 +25,7 @@ class Transaction extends Model
             'pg_fees' => AsIntegerMoney::of('currency'),
             'total_amount' => AsIntegerMoney::of('currency'),
             'transaction_date_time' => "datetime",
+            'request_data' => 'array',
             'response_data' => 'array',
         ];
     }
@@ -43,5 +44,13 @@ class Transaction extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * @return BelongsTo<PGConnection, $this>
+     */
+    public function pgConnection(): BelongsTo
+    {
+        return $this->belongsTo(PGConnection::class, 'pg_connection_id');
     }
 }
