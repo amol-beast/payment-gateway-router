@@ -85,13 +85,13 @@ class TransactionsInfolist
                         TextEntry::make('request_data')
                             ->label('Request Data')
                             ->placeholder('-')
-                            ->formatStateUsing(fn (?array $state): string => $state ? json_encode($state, JSON_PRETTY_PRINT) : '-')
+                            ->state(fn (Transaction $record): ?string => $record->request_data ? json_encode($record->request_data, JSON_PRETTY_PRINT) : null)
                             ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap'])
                             ->columnSpanFull(),
                         TextEntry::make('response_data')
                             ->label('Response Data')
                             ->placeholder('-')
-                            ->formatStateUsing(fn (?array $state): string => $state ? json_encode($state, JSON_PRETTY_PRINT) : '-')
+                            ->state(fn (Transaction $record): ?string => $record->response_data ? json_encode($record->response_data, JSON_PRETTY_PRINT) : null)
                             ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap'])
                             ->columnSpanFull(),
                     ]),
