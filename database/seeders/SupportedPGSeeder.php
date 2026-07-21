@@ -31,6 +31,13 @@ class SupportedPGSeeder extends Seeder
                     'fees_included_in_amount' => 'boolean',
                     'fees_rate' => 'float',
             ]],
+            'PGSimulator' => [
+                'pg_class'=> 'PGSimulator',
+                'required' => [
+                    'supports_refunds' => 'boolean',
+                    'fees_included_in_amount' => 'boolean',
+                    'fees_rate' => 'float',
+            ]],
             'PAYPAL' => [
                 'pg_class'=> 'PAYPAL',
                 'required' => [

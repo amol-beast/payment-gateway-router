@@ -7,12 +7,13 @@ use App\Contracts\PaymentGatewayInterface;
 class PaymentGatewayFactory
 {
     /**
-     * @param array<string, mixed> $connection
+     * @param  array<string, mixed>  $connection
      */
     public static function create(array $connection): PaymentGatewayInterface
     {
         return match ($connection['pg_class']) {
             'ICICI' => new ICICI($connection['attributes'], $connection['type']),
+            'PGSimulator' => new PGSimulator($connection['attributes'], $connection['type']),
             default => throw new \Exception('Invalid payment gateway type.'),
         };
     }
@@ -21,6 +22,7 @@ class PaymentGatewayFactory
     {
         return match ($pg_class) {
             'ICICI' => new ICICI([]),
+            'PGSimulator' => new PGSimulator([]),
             default => throw new \Exception('Invalid payment gateway type.'),
         };
     }
