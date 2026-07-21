@@ -18,33 +18,40 @@ class ViewTransactions extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('checkTransactionStatus')
-                ->label('Check Transaction Status')
-                ->icon(Heroicon::OutlinedArrowPath)
-                ->color('warning')
-                ->visible(fn (): bool => $this->record->status === TransactionStatus::PENDING)
-                ->requiresConfirmation()
-                ->action(function (TransactionService $transactionService): void {
-                    try {
-                        $transactionService->getTransactionStatus($this->record->id);
-
-                        $this->record->refresh();
-
-                        Notification::make()
-                            ->title('Transaction status updated')
-                            ->body("Current status: {$this->record->status->value}")
-                            ->success()
-                            ->send();
-                    } catch (\Throwable $e) {
-                        Notification::make()
-                            ->title('Failed to check transaction status')
-                            ->body($e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-                }),
+            $this->makeCheckTransactionStatusAction('checkTransactionStatus', 'Check Transaction Status', TransactionStatus::PENDING),
+            $this->makeCheckTransactionStatusAction('recheckTransactionStatus', 'Recheck Transaction Status', TransactionStatus::SUCCESS),
+            $this->makeCheckTransactionStatusAction('checkFailedTransactionStatus', 'Check Payment Status', TransactionStatus::FAILED),
 
             EditAction::make(),
         ];
+    }
+
+    protected function makeCheckTransactionStatusAction(string $name, string $label, TransactionStatus $visibleForStatus): Action
+    {
+        return Action::make($name)
+            ->label($label)
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->color('warning')
+            ->visible(fn (): bool => $this->record->status === $visibleForStatus)
+            ->requiresConfirmation()
+            ->action(function (TransactionService $transactionService): void {
+                try {
+                    $transactionService->getTransactionStatus($this->record->id);
+
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('Transaction status updated')
+                        ->body("Current status: {$this->record->status->value}")
+                        ->success()
+                        ->send();
+                } catch (\Throwable $e) {
+                    Notification::make()
+                        ->title('Failed to check transaction status')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            });
     }
 }

@@ -25,7 +25,7 @@ class TransactionsResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Transactions';
 
-    protected static ?string $navigationLabel = 'One time Transaction';
+    protected static ?string $navigationLabel = 'One Time Transactions';
 
     public static function form(Schema $schema): Schema
     {

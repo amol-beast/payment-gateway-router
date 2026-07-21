@@ -9,7 +9,7 @@ class PaymentGatewayFactory
     public static function create(array $connection): PaymentGatewayInterface
     {
         return match ($connection['pg_class']) {
-            'ICICI' => new ICICI($connection['attributes']),
+            'ICICI' => new ICICI($connection['attributes'],$connection['type']),
             default => throw new \Exception('Invalid payment gateway type.'),
         };
     }

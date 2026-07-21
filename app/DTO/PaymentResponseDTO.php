@@ -4,7 +4,7 @@ namespace App\DTO;
 
 use App\Enums\PaymentMethod;
 use App\Enums\TransactionStatus;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Devhammed\LaravelBrickMoney\Currency;
 use Devhammed\LaravelBrickMoney\Money;
 use Spatie\LaravelData\Data;
@@ -20,7 +20,7 @@ class PaymentResponseDTO extends Data
         public readonly Money $amount,
         public readonly Money $pgFees,
         public readonly Money $totalAmount,
-        public readonly Carbon $transactionDateTime,
+        public readonly CarbonImmutable $transactionDateTime,
         public readonly Currency $currency,
         public readonly PaymentMethod $paymentMethod,
         public readonly string $clientName,

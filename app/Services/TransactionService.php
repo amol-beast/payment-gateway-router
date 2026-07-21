@@ -15,7 +15,7 @@ use App\Models\Transaction;
 use App\Repositories\ClientConnectionRepository;
 use App\Repositories\ClientRepository;
 use App\Repositories\PgConnectionRepository;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +42,7 @@ class TransactionService
         $paymentRequest->setPgConnectionId($connection['pg_connection']['id']);
         $transaction = $this->saveTransactionFromPaymentRequest($paymentRequest);
 
-        return $paymentGateway->getPaymentUrl($paymentRequest, $transaction);
+        return $paymentGateway->handlePaymentRequest($paymentRequest, $transaction);
     }
 
     public function handlePaymentResponse($response, $pgClass): RedirectResponse
@@ -126,14 +126,18 @@ class TransactionService
 
     public function getTransactionStatus($transactionDbId):PaymentResponseDTO
     {
-        $transaction = Transaction::with(['pgConnection'])->find($transactionDbId);
+        $transaction = Transaction::with(['client', 'pgConnection'])->find($transactionDbId);
         if (!$transaction) {
             throw new \Exception('Transaction not found.');
         }
 
         $paymentGateway = PaymentGatewayFactory::create($transaction->toArray()['pg_connection']);
         $paymentResponseDTO = $paymentGateway->getTransactionStatus($transaction);
-        $this->updateTransaction($paymentResponseDTO);
+
+        if ($transaction->status !== $paymentResponseDTO->status) {
+            $this->updateTransaction($paymentResponseDTO);
+        }
+
         return $paymentResponseDTO;
     }
 
@@ -157,11 +161,11 @@ class TransactionService
             ->where('client_id', $clientDbId);
 
         if ($startDate) {
-            $query->where('transaction_date_time', '>=', Carbon::createFromFormat('Ymd', $startDate)->startOfDay());
+            $query->where('transaction_date_time', '>=', CarbonImmutable::createFromFormat('Ymd', $startDate)->startOfDay());
         }
 
         if ($endDate) {
-            $query->where('transaction_date_time', '<=', Carbon::createFromFormat('Ymd', $endDate)->endOfDay());
+            $query->where('transaction_date_time', '<=', CarbonImmutable::createFromFormat('Ymd', $endDate)->endOfDay());
         }
 
         return $query->orderByDesc('transaction_date_time')
@@ -179,7 +183,7 @@ class TransactionService
             $transactionDateTime = $transaction->created_at;
         }
 
-        $transactionDateTime = Carbon::instance($transactionDateTime);
+        $transactionDateTime = CarbonImmutable::instance($transactionDateTime);
 
         return new PaymentResponseDTO(
             transactionDbId: (string) $transaction->id,
