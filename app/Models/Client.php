@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ClientCacheBuster;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,6 +19,23 @@ class Client extends Model
         'data' => 'array',
         'status' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (Client $client): void {
+            ClientCacheBuster::forgetClient($client->id);
+            ClientCacheBuster::forgetClientPgConnection($client->client_id);
+
+            if ($client->isDirty('client_id')) {
+                ClientCacheBuster::forgetClientPgConnection($client->getOriginal('client_id'));
+            }
+        });
+
+        static::deleted(function (Client $client): void {
+            ClientCacheBuster::forgetClient($client->id);
+            ClientCacheBuster::forgetClientPgConnection($client->client_id);
+        });
+    }
 
     /**
      * @return BelongsTo<User, $this>
