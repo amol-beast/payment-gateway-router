@@ -4,10 +4,12 @@ namespace App\Filament\Resources\Transactions\Tables;
 
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -22,11 +24,6 @@ class TransactionsTable
 
                 TextColumn::make('client.name')
                     ->label('Client')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('customer.name')
-                    ->label('Customer')
                     ->searchable()
                     ->sortable(),
 
@@ -61,12 +58,22 @@ class TransactionsTable
                     ->dateTime()
                     ->sortable(),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 //
             ])
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('pgApiLogs')
+                    ->label('PG API Logs')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->color('gray')
+                    ->modalHeading(fn (Transaction $record): string => "PG API Logs - {$record->site_reference_id}")
+                    ->modalContent(fn (Transaction $record) => view('filament.modals.payment-gateway-connection-api-logs', ['transaction' => $record]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalWidth('7xl'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

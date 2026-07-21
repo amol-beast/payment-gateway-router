@@ -58,6 +58,15 @@ class ClientConnectionsTable
                         'transactionType' => $record->transaction_type?->value ?? TransactionType::SALE->value,
                     ]))
                     ->openUrlInNewTab(),
+                Action::make('pgApiLogs')
+                    ->label('PG API Logs')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->color('gray')
+                    ->modalHeading(fn (ClientConnection $record): string => "PG API Logs - {$record->client->name}")
+                    ->modalContent(fn (ClientConnection $record) => view('filament.modals.payment-gateway-connection-api-logs', ['clientConnection' => $record]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalWidth('7xl'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -8,6 +8,7 @@ use Devhammed\LaravelBrickMoney\Casts\AsCurrency;
 use Devhammed\LaravelBrickMoney\Casts\AsIntegerMoney;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
@@ -52,5 +53,13 @@ class Transaction extends Model
     public function pgConnection(): BelongsTo
     {
         return $this->belongsTo(PGConnection::class, 'pg_connection_id');
+    }
+
+    /**
+     * @return HasMany<PaymentGatewayConnectionApiLog, $this>
+     */
+    public function apiLogs(): HasMany
+    {
+        return $this->hasMany(PaymentGatewayConnectionApiLog::class);
     }
 }

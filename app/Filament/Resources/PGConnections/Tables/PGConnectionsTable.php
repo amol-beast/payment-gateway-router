@@ -2,10 +2,13 @@
 
 namespace App\Filament\Resources\PGConnections\Tables;
 
+use App\Models\PGConnection;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -46,6 +49,15 @@ class PGConnectionsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('pgApiLogs')
+                    ->label('PG API Logs')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->color('gray')
+                    ->modalHeading(fn (PGConnection $record): string => "PG API Logs - {$record->name}")
+                    ->modalContent(fn (PGConnection $record) => view('filament.modals.payment-gateway-connection-api-logs', ['pgConnection' => $record]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalWidth('7xl'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
