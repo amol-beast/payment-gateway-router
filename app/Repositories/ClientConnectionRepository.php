@@ -7,7 +7,10 @@ use Illuminate\Support\Facades\Cache;
 
 class ClientConnectionRepository
 {
-    public function getClientPGConnection($clientId, $isRecurring)
+    /**
+     * @return array<string, mixed>
+     */
+    public function getClientPGConnection(int|string $clientId, int|bool $isRecurring): array
     {
         return Cache::remember("clientPGConnection.{$clientId}.{$isRecurring}", 3600, function () use ($clientId, $isRecurring) {
             return ClientConnection::join("clients","clients.id","=","clients_connections.client_id")

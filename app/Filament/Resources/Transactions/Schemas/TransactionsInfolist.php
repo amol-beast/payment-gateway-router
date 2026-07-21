@@ -85,13 +85,21 @@ class TransactionsInfolist
                         TextEntry::make('request_data')
                             ->label('Request Data')
                             ->placeholder('-')
-                            ->state(fn (Transaction $record): ?string => $record->request_data ? json_encode($record->request_data, JSON_PRETTY_PRINT) : null)
+                            ->state(function (Transaction $record): ?string {
+                                $json = $record->request_data ? json_encode($record->request_data, JSON_PRETTY_PRINT) : null;
+
+                                return $json === false ? null : $json;
+                            })
                             ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap'])
                             ->columnSpanFull(),
                         TextEntry::make('response_data')
                             ->label('Response Data')
                             ->placeholder('-')
-                            ->state(fn (Transaction $record): ?string => $record->response_data ? json_encode($record->response_data, JSON_PRETTY_PRINT) : null)
+                            ->state(function (Transaction $record): ?string {
+                                $json = $record->response_data ? json_encode($record->response_data, JSON_PRETTY_PRINT) : null;
+
+                                return $json === false ? null : $json;
+                            })
                             ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap'])
                             ->columnSpanFull(),
                     ]),

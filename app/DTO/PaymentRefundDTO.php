@@ -2,8 +2,6 @@
 
 namespace App\DTO;
 
-use App\Enums\PaymentType;
-use App\Enums\TransactionType;
 use Devhammed\LaravelBrickMoney\Currency;
 use Devhammed\LaravelBrickMoney\Money;
 use Spatie\LaravelData\Data;
@@ -14,12 +12,11 @@ class PaymentRefundDTO extends Data
 
     public readonly Money $amount;
 
-    public readonly TransactionType $transactionType;
-
-    public readonly array $customer;
-    public readonly PaymentType $paymentType;
-
     protected ?int $pgConnectionId;
+
+    /**
+     * @param array<string, mixed> $requestData
+     */
     public function __construct(
         public readonly string $clientDbId,
         public readonly string $clientId,

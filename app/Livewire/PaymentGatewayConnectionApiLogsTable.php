@@ -16,6 +16,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
@@ -78,14 +79,14 @@ class PaymentGatewayConnectionApiLogsTable extends Component implements HasActio
 
                 TextColumn::make('request_data')
                     ->label('Request Data')
-                    ->state(fn (PaymentGatewayConnectionApiLog $record): string => $record->request_data ? json_encode($record->request_data) : '')
+                    ->state(fn (PaymentGatewayConnectionApiLog $record): string => $this->encodeForDisplay($record->request_data))
                     ->limit(50)
                     ->wrap()
                     ->action($this->makeJsonModalAction('viewRequestData', 'Request Data', fn (PaymentGatewayConnectionApiLog $record) => $record->request_data)),
 
                 TextColumn::make('response_data')
                     ->label('Response Data')
-                    ->state(fn (PaymentGatewayConnectionApiLog $record): string => $record->response_data ? json_encode($record->response_data) : '')
+                    ->state(fn (PaymentGatewayConnectionApiLog $record): string => $this->encodeForDisplay($record->response_data))
                     ->limit(50)
                     ->wrap()
                     ->action($this->makeJsonModalAction('viewResponseData', 'Response Data', fn (PaymentGatewayConnectionApiLog $record) => $record->response_data)),
@@ -100,22 +101,41 @@ class PaymentGatewayConnectionApiLogsTable extends Component implements HasActio
     }
 
     /**
+     * @param array<string, mixed>|null $data
+     */
+    protected function encodeForDisplay(?array $data): string
+    {
+        if (! $data) {
+            return '';
+        }
+
+        $json = json_encode($data);
+
+        return $json === false ? '' : $json;
+    }
+
+    /**
      * @param Closure(PaymentGatewayConnectionApiLog): (array<string, mixed>|null) $getData
      */
     protected function makeJsonModalAction(string $name, string $heading, Closure $getData): Action
     {
         return Action::make($name)
             ->modalHeading($heading)
-            ->modalContent(fn (PaymentGatewayConnectionApiLog $record): HtmlString => new HtmlString(
-                '<pre class="fi-ta-text w-full max-w-full overflow-x-auto whitespace-pre-wrap break-all text-xs">'
-                . e($getData($record) ? json_encode($getData($record), JSON_PRETTY_PRINT) : 'No data')
-                . '</pre>'
-            ))
+            ->modalContent(function (PaymentGatewayConnectionApiLog $record) use ($getData): HtmlString {
+                $data = $getData($record);
+                $json = $data ? json_encode($data, JSON_PRETTY_PRINT) : false;
+
+                return new HtmlString(
+                    '<pre class="fi-ta-text w-full max-w-full overflow-x-auto whitespace-pre-wrap break-all text-xs">'
+                    . e($json === false ? 'No data' : $json)
+                    . '</pre>'
+                );
+            })
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Close');
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.payment-gateway-connection-api-logs-table');
     }

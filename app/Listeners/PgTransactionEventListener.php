@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\PgTransactionEvent;
 use App\Mail\TransactionStatusMail;
+use App\Models\Client;
 use App\Models\Transaction;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Http;
@@ -31,7 +32,7 @@ class PgTransactionEventListener implements ShouldQueue
         }
     }
 
-    protected function sendWebhook($client, PgTransactionEvent $event): void
+    protected function sendWebhook(Client $client, PgTransactionEvent $event): void
     {
         $payload = [
             'transaction_id' => $event->paymentResponseDTO->transactionId,
@@ -44,7 +45,17 @@ class PgTransactionEventListener implements ShouldQueue
             'transaction_date_time' => $event->paymentResponseDTO->transactionDateTime->toIso8601String(),
         ];
 
-        $signature = hash_hmac('sha256', json_encode($payload), $client->client_secret);
+        $encodedPayload = json_encode($payload);
+
+        if ($encodedPayload === false) {
+            Log::warning('PG transaction webhook payload could not be encoded', [
+                'client_id' => $client->client_id,
+            ]);
+
+            return;
+        }
+
+        $signature = hash_hmac('sha256', $encodedPayload, $client->client_secret);
 
         try {
             Http::withHeaders([

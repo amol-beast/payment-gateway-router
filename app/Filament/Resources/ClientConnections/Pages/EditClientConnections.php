@@ -32,7 +32,7 @@ class EditClientConnections extends EditRecord
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $this->validateClientConnection($data, $this->record->getKey());
+        $this->validateClientConnection($data, (int) $this->getRecord()->getKey());
 
         return $data;
     }

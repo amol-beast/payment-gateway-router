@@ -16,7 +16,6 @@ use Carbon\CarbonImmutable;
 use Devhammed\LaravelBrickMoney\Currency;
 use Devhammed\LaravelBrickMoney\Money;
 use Illuminate\Http\Client\Response;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class ICICI implements PaymentGatewayInterface
@@ -45,24 +44,29 @@ class ICICI implements PaymentGatewayInterface
 
     protected bool $isRefundSupported = false;
 
-    public function __construct(array $pg_data, $connectionType = ConnectionType::TEST)
+    /**
+     * @param array<string, mixed> $pg_data
+     */
+    public function __construct(array $pg_data, ConnectionType|string $connectionType = ConnectionType::TEST)
     {
         $this->merchant_id = $pg_data['merchant_id'] ?? null;
         $this->aggregator_id = $pg_data['aggregator_id'] ?? null;
         $this->encryption_key = $pg_data['encryption_key'] ?? null;
         $this->sub_merchant_id = $pg_data['sub_merchant_id'] ?? null;
         $this->paymode = $pg_data['paymode'] ?? null;
-        $this->connectionType = $connectionType;
-        $this->isRefundSupported = $pg_data['supports_refunds'] ?? false;
+        $this->isRefundSupported = (bool) ($pg_data['supports_refunds'] ?? false);
 
-        $this->default_base_url = match ($connectionType) {
+        $this->connectionType = $connectionType instanceof ConnectionType
+            ? $connectionType
+            : ConnectionType::from($connectionType);
+
+        $this->default_base_url = match ($this->connectionType) {
             ConnectionType::TEST => 'https://pgpayuat.icicibank.com/tsp/pg/api/',
             ConnectionType::PRODUCTION => 'https://pgpay.icicibank.com/pg/api/',
-            default => throw new \Exception('Invalid connection type.'),
         };
     }
 
-    protected function getCurrencyCode($currency): string
+    protected function getCurrencyCode(string $currency): string
     {
         if ($currency == 'INR') {
             return '356';
@@ -71,6 +75,9 @@ class ICICI implements PaymentGatewayInterface
         throw new \Exception('Invalid currency code.');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function constructFromPaymentRequest(PaymentRequestDTO $paymentRequest, Transaction $transaction): array
     {
         $request_data = [
@@ -78,7 +85,7 @@ class ICICI implements PaymentGatewayInterface
             'aggregatorID' => $this->aggregator_id,
             'merchantTxnNo' => $transaction->id.'-'.$paymentRequest->site_reference_id,
             'amount' => (string) $paymentRequest->amount->getAmount(),
-            'currencyCode' => $this->getCurrencyCode($paymentRequest->currency),
+            'currencyCode' => $this->getCurrencyCode((string) $paymentRequest->currency),
             'payType' => '0',
             'customerEmailID' => $paymentRequest->customer['email'],
             'transactionType' => 'SALE',
@@ -94,19 +101,29 @@ class ICICI implements PaymentGatewayInterface
         return $request_data;
     }
 
-    protected function getConcatenatedRequestString($requestData): string
+    /**
+     * @param array<string, mixed> $requestData
+     */
+    protected function getConcatenatedRequestString(array $requestData): string
     {
         // assumes that request data is already sorted alphabetically by key
         $concatenatedRequestString = '';
-        foreach ($requestData as $key => $value) {
+        foreach ($requestData as $value) {
             $concatenatedRequestString .= $value;
         }
 
         return $concatenatedRequestString;
     }
 
-    protected function getHMacDigest($requestData): string
+    /**
+     * @param array<string, mixed> $requestData
+     */
+    protected function getHMacDigest(array $requestData): string
     {
+        if ($this->encryption_key === null) {
+            throw new \Exception('Missing encryption key for HMAC digest.');
+        }
+
         return hash_hmac('sha256', $this->getConcatenatedRequestString($requestData), $this->encryption_key);
     }
 
@@ -125,6 +142,9 @@ class ICICI implements PaymentGatewayInterface
         return $this->default_base_url.self::SETTLEMENT_DETAILS_ENDPOINT;
     }
 
+    /**
+     * @param array<string, mixed> $requestData
+     */
     protected function logApiCall(Transaction $transaction, PaymentGatewayRequestType $requestType, array $requestData, Response $response): void
     {
         PaymentGatewayConnectionApiLog::create([
@@ -155,63 +175,69 @@ class ICICI implements PaymentGatewayInterface
         }
         $result = $response->json();
 
-        if ($result['responseCode'] !== 'R1000') {
+        if (! is_array($result) || $result['responseCode'] !== 'R1000') {
             throw new \Exception('Payment Gateway Error: '.json_encode($result));
         }
 
         return $result['redirectURI'].'?tranCtx='.$result['tranCtx'];
     }
 
-    protected function mapSucessReponseToPaymentResponseDTO($response): PaymentResponseDTO
+    /**
+     * @param array<string, mixed> $response
+     */
+    protected function mapSucessReponseToPaymentResponseDTO(array $response): PaymentResponseDTO
     {
         // ICICI only supports INR currency, so hardcoding it here
         $amount = Money::of($response['amount'], 'INR');
         $pgFees = Money::of($response['oth_charge'], 'INR');
 
-        $dbTransaction = Transaction::with(['client', 'pgConnection'])->find($response['addlParam1']);
+        $dbTransaction = Transaction::with(['client', 'pgConnection'])->find((string) $response['addlParam1']);
 
         if (! $dbTransaction) {
             throw new \Exception('Transaction not found.');
         }
 
-        $transaction = [
-            'transactionDbId' => $response['addlParam1'],
-            'siteReferenceId' => $response['addlParam2'],
-            'status' => $response['responseCode'] === '0000' ? TransactionStatus::SUCCESS : TransactionStatus::FAILED,
-            'transactionId' => $response['txnID'],
-            'description' => $response['respDescription'],
-            'amount' => $amount,
-            'pgFees' => $pgFees,
-            'totalAmount' => $amount->plus($pgFees),
-            'transactionDateTime' => CarbonImmutable::createFromFormat('YmdHis', $response['paymentDateTime']),
-            'currency' => Currency::of('INR'),
-            'paymentMethod' => $this->mapPaymentModes($response['paymentMode']),
-            'clientName' => $dbTransaction->client->name,
-            'pgConnection' => $dbTransaction->pgConnection->name,
-            'pgResponseRaw' => $response,
-        ];
-
-        return new PaymentResponseDTO(...$transaction);
+        return new PaymentResponseDTO(
+            transactionDbId: (string) $response['addlParam1'],
+            siteReferenceId: (string) $response['addlParam2'],
+            status: $response['responseCode'] === '0000' ? TransactionStatus::SUCCESS : TransactionStatus::FAILED,
+            transactionId: (string) $response['txnID'],
+            description: (string) $response['respDescription'],
+            amount: $amount,
+            pgFees: $pgFees,
+            totalAmount: $amount->plus($pgFees),
+            transactionDateTime: CarbonImmutable::createFromFormat('YmdHis', $response['paymentDateTime']),
+            currency: Currency::of('INR'),
+            paymentMethod: $this->mapPaymentModes((string) $response['paymentMode']),
+            clientName: $dbTransaction->client->name,
+            pgConnection: $dbTransaction->pgConnection->name,
+            pgResponseRaw: $response,
+        );
     }
 
-    protected function mapResponseToPaymentResponseDTO($response): PaymentResponseDTO
+    /**
+     * @param array<string, mixed> $response
+     */
+    protected function mapResponseToPaymentResponseDTO(array $response): PaymentResponseDTO
     {
-        if ($response['responseCode'] !== '0000') {
+        if ($response['responseCode'] === '0000') {
             return $this->mapSucessReponseToPaymentResponseDTO($response);
-        } else {
-            $transaction = [
-                'transactionDbId' => explode('-', $response['merchantTxnNo'])[0],
-                'siteReferenceId' => explode('-', $response['merchantTxnNo'])[1],
-                'status' => $response['responseCode'] === 'P0030' ? TransactionStatus::PENDING :
-                    TransactionStatus::FAILED,
-                'description' => $response['respDescription'],
-                'pgResponseRaw' => $response,
-            ];
-
-            return new PaymentResponseDTO(...$transaction);
         }
+
+        [$transactionDbId] = explode('-', (string) $response['merchantTxnNo'], 2);
+
+        $dbTransaction = Transaction::with(['client', 'pgConnection'])->find($transactionDbId);
+
+        if (! $dbTransaction) {
+            throw new \Exception('Transaction not found.');
+        }
+
+        return $this->mapStatusResponseToPaymentResponseDTO($response, $dbTransaction);
     }
 
+    /**
+     * @param array<string, mixed> $response
+     */
     protected function mapStatusResponseToPaymentResponseDTO(array $response, Transaction $transaction): PaymentResponseDTO
     {
         $status = match ($response['responseCode']) {
@@ -237,7 +263,7 @@ class ICICI implements PaymentGatewayInterface
         );
 
         $paymentMethod = isset($response['paymentMode'])
-            ? $this->mapPaymentModes($response['paymentMode'])
+            ? $this->mapPaymentModes((string) $response['paymentMode'])
             : ($transaction->payment_method ?? PaymentMethod::UNKNOWN);
 
         return new PaymentResponseDTO(
@@ -245,7 +271,7 @@ class ICICI implements PaymentGatewayInterface
             siteReferenceId: $transaction->site_reference_id,
             status: $status,
             transactionId: (string) ($response['txnID'] ?? $transaction->transaction_id ?? ''),
-            description: $response['respDescription'] ?? '',
+            description: (string) ($response['respDescription'] ?? ''),
             amount: $amount,
             pgFees: $pgFees,
             totalAmount: $amount->plus($pgFees),
@@ -258,22 +284,29 @@ class ICICI implements PaymentGatewayInterface
         );
     }
 
-    protected function mapPaymentModes($paymentMode): PaymentMethod
+    protected function mapPaymentModes(string $paymentMode): PaymentMethod
     {
         return match ($paymentMode) {
             'CARD' => PaymentMethod::CARD,
             'NB' => PaymentMethod::NETBANKING,
             'WALLET' => PaymentMethod::WALLET,
             'UPI' => PaymentMethod::UPI,
-            'debit_card' => PaymentMethod::UNKNOWN
+            'debit_card' => PaymentMethod::UNKNOWN,
+            default => PaymentMethod::UNKNOWN,
         };
     }
 
-    public function handlePaymentResponse($response): PaymentResponseDTO
+    /**
+     * @param array<string, mixed> $response
+     */
+    public function handlePaymentResponse(array $response): PaymentResponseDTO
     {
         return $this->mapResponseToPaymentResponseDTO($response);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function constructTransactionStatusRequest(Transaction $transaction): array
     {
         $request_data = [
@@ -306,6 +339,10 @@ class ICICI implements PaymentGatewayInterface
         }
         $result = $response->json();
 
+        if (! is_array($result)) {
+            throw new \Exception('Payment Gateway Error: unexpected response body.');
+        }
+
         return $this->mapStatusResponseToPaymentResponseDTO($result, $transaction);
     }
 
@@ -319,7 +356,7 @@ class ICICI implements PaymentGatewayInterface
         return $this->isRefundSupported;
     }
 
-    public function refundPayment(Transaction $transaction, PaymentRefundDTO $paymentRefundRequest):PaymentResponseDTO
+    public function refundPayment(Transaction $transaction, PaymentRefundDTO $paymentRefundRequest): PaymentResponseDTO
     {
         throw new \Exception('Refunds are not supported by ICICI.');
     }

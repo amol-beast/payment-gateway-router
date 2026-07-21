@@ -11,6 +11,9 @@ use Spatie\LaravelData\Data;
 
 class PaymentResponseDTO extends Data
 {
+    /**
+     * @param array<string, mixed> $pgResponseRaw
+     */
     public function __construct(
         public readonly string $transactionDbId,
         public readonly string $siteReferenceId,

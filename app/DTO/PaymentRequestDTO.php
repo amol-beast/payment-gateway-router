@@ -16,10 +16,18 @@ class PaymentRequestDTO extends Data
 
     public readonly TransactionType $transactionType;
 
+    /**
+     * @var array<string, mixed>
+     */
     public readonly array $customer;
     public readonly PaymentType $paymentType;
 
     protected ?int $pgConnectionId;
+
+    /**
+     * @param array<string, mixed> $customer
+     * @param array<string, mixed> $requestData
+     */
     public function __construct(
         public readonly string $clientDbId,
         public readonly string $clientId,

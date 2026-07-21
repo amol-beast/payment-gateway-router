@@ -33,15 +33,15 @@ class HandleApiClientEncryptedRequest
 
         $secretKey = $client->client_secret;
 
-        $decryptedData = Encryption::decrypt($encryptedData, $secretKey);
-
-        if ($decryptedData === false) {
+        try {
+            $decryptedData = Encryption::decrypt((string) $encryptedData, $secretKey);
+        } catch (\Throwable) {
             $this->logEvent($request, $client, ClientApiLogResult::ERROR, ['error' => 'Invalid Data']);
 
             return response()->json(['error' => 'Invalid Data'], 401);
         }
 
-        $decryptedData = json_decode($decryptedData,true);
+        $decryptedData = json_decode($decryptedData, true);
 
         if(!$decryptedData) {
             $this->logEvent($request, $client, ClientApiLogResult::ERROR, ['error' => 'Malformed Data']);

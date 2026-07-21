@@ -7,13 +7,14 @@ use App\Enums\PaymentType;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class UtilsController extends Controller
 {
-    public function testPayment(Request $request) {
+    public function testPayment(Request $request): RedirectResponse
+    {
         $client_id = $request->query('clientId', 'LQPXDMJR6Q9NXNTN');
 
         $client = Client::where("client_id", $client_id)->first();

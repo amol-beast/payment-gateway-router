@@ -19,7 +19,10 @@ trait ValidatesClientConnection
      */
     protected function validateClientConnection(array $data, ?int $ignoreRecordId = null): void
     {
-        $pgConnection = PGConnection::find($data['pg_connection_id'] ?? null);
+        $pgConnectionId = $data['pg_connection_id'] ?? null;
+        $pgConnection = (is_int($pgConnectionId) || is_string($pgConnectionId))
+            ? PGConnection::find($pgConnectionId)
+            : null;
 
         if ($pgConnection && $pgConnection->type->value !== $data['type']) {
             $this->failClientConnectionValidation(

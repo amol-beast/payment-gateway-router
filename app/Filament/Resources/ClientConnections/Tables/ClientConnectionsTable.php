@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ClientConnections\Tables;
 
 use App\Enums\PaymentType;
-use App\Enums\TransactionType;
 use App\Models\ClientConnection;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -55,7 +54,7 @@ class ClientConnectionsTable
                         'paymentType' => $record->is_recurring
                             ? PaymentType::SUBSCRIPTION->value
                             : PaymentType::ONE_TIME_PAYMENT->value,
-                        'transactionType' => $record->transaction_type?->value ?? TransactionType::SALE->value,
+                        'transactionType' => $record->transaction_type->value,
                     ]))
                     ->openUrlInNewTab(),
                 Action::make('pgApiLogs')

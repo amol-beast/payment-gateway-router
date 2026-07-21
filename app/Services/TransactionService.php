@@ -29,7 +29,7 @@ class TransactionService
         protected PgConnectionRepository $pgConnectionRepository
     ) {}
 
-    public function initiatePayment(PaymentRequestDTO $paymentRequest)
+    public function initiatePayment(PaymentRequestDTO $paymentRequest): string
     {
         $connection = $this->clientConnectionRepository->getClientPGConnection($paymentRequest->clientId,
             $paymentRequest->paymentType === PaymentType::ONE_TIME_PAYMENT ? 0 : 1);
@@ -45,7 +45,10 @@ class TransactionService
         return $paymentGateway->handlePaymentRequest($paymentRequest, $transaction);
     }
 
-    public function handlePaymentResponse($response, $pgClass): RedirectResponse
+    /**
+     * @param array<string, mixed> $response
+     */
+    public function handlePaymentResponse(array $response, string $pgClass): RedirectResponse
     {
         $paymentGateway = PaymentGatewayFactory::createEmpty($pgClass);
         $paymentResponseDTO = $paymentGateway->handlePaymentResponse($response);
@@ -53,12 +56,16 @@ class TransactionService
         $transaction = $this->updateTransaction($paymentResponseDTO);
         $client = $this->clientRepository->getClient($transaction->client_id);
 
+        if (! $client) {
+            throw new \Exception('Client not found.');
+        }
+
         $encryptedData = $this->getEncryptedData($paymentResponseDTO->toArray(), $client->client_secret);
 
         return redirect()->away($client->redirect_uri.$client->redirect_uri_separator.'data='.urlencode($encryptedData));
     }
 
-    protected function getEncryptedData($data, $key): string
+    protected function getEncryptedData(mixed $data, string $key): string
     {
         return Encryption::encrypt($data, $key);
     }
@@ -124,14 +131,14 @@ class TransactionService
         });
     }
 
-    public function getTransactionStatus($transactionDbId):PaymentResponseDTO
+    public function getTransactionStatus(int|string $transactionDbId): PaymentResponseDTO
     {
         $transaction = Transaction::with(['client', 'pgConnection'])->find($transactionDbId);
         if (!$transaction) {
             throw new \Exception('Transaction not found.');
         }
 
-        $paymentGateway = PaymentGatewayFactory::create($transaction->toArray()['pg_connection']);
+        $paymentGateway = PaymentGatewayFactory::create((array) $transaction->toArray()['pg_connection']);
         $paymentResponseDTO = $paymentGateway->getTransactionStatus($transaction);
 
         if ($transaction->status !== $paymentResponseDTO->status) {
@@ -155,6 +162,9 @@ class TransactionService
         return $this->mapTransactionToPaymentResponseDTO($transaction);
     }
 
+    /**
+     * @return LengthAwarePaginator<int, PaymentResponseDTO>
+     */
     public function getTransactionsList(int|string $clientDbId, ?string $startDate, ?string $endDate, int $perPage = 20): LengthAwarePaginator
     {
         $query = Transaction::with(['client', 'pgConnection'])
@@ -177,10 +187,10 @@ class TransactionService
     {
         $paymentMethod = PaymentMethod::tryFrom((string) $transaction->getRawOriginal('payment_method')) ?? PaymentMethod::UNKNOWN;
 
-        try {
-            $transactionDateTime = $transaction->transaction_date_time ?? $transaction->created_at;
-        } catch (\Throwable) {
-            $transactionDateTime = $transaction->created_at;
+        $transactionDateTime = $transaction->transaction_date_time ?? $transaction->created_at;
+
+        if (! $transactionDateTime instanceof \DateTimeInterface) {
+            $transactionDateTime = CarbonImmutable::now();
         }
 
         $transactionDateTime = CarbonImmutable::instance($transactionDateTime);
@@ -190,7 +200,7 @@ class TransactionService
             siteReferenceId: $transaction->site_reference_id,
             status: $transaction->status,
             transactionId: (string) $transaction->transaction_id,
-            description: $transaction->response_data['respDescription'] ?? '',
+            description: (string) ($transaction->response_data['respDescription'] ?? ''),
             amount: $transaction->transaction_amount['transaction_amount'],
             pgFees: $transaction->pg_fees['pg_fees'],
             totalAmount: $transaction->total_amount['total_amount'],
@@ -198,7 +208,7 @@ class TransactionService
             currency: $transaction->currency,
             paymentMethod: $paymentMethod,
             clientName: $transaction->client->name,
-            pgConnection: $transaction->pgConnection->name ?? '',
+            pgConnection: $transaction->pgConnection->name,
             pgResponseRaw: $transaction->response_data ?? [],
         );
     }
